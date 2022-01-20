@@ -3,16 +3,16 @@
 #include <Windows.h>
 
 // =============< MACROS >=====================
-#ifndef JMP
-#define JMP(hs)\
+#ifndef JMP32
+#define JMP32(hs)\
 		_asm { mov eax, hs }\
 		_asm { mov eax, [eax + 10h]}\
 		_asm { pop ebp }\
 		_asm { jmp eax }
 #endif
 
-#ifndef JMPPURE
-#define JMPPURE(hs) \
+#ifndef JMPPURE32
+#define JMPPURE32(hs) \
 		_asm { mov eax, hs}\
 		_asm { mov eax, [eax + 10h]}\
 		_asm { jmp eax}
