@@ -8,10 +8,12 @@
 
 #if _WIN64
 /* x64
- * 10 bytes
+ * 15 bytes
 int __stdcall PrintArgs(int argc, char** argv)
-	00007FF766B511C0 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx
-	00007FF766B511C5 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi
+	00007FF6FCEF1390 48 89 5C 24 08       mov         qword ptr [rsp+8],rbx  
+	00007FF6FCEF1395 48 89 74 24 10       mov         qword ptr [rsp+10h],rsi  
+	00007FF6FCEF139A 57                   push        rdi  
+	00007FF6FCEF139B 48 83 EC 20          sub         rsp,20h
 */
 DWORD CountOfSafeBytes = 15;
 #elif _WIN32
