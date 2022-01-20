@@ -4,13 +4,17 @@
 #include <Windows.h>
 
 namespace Hooks {
-	const DWORD Hooks_Hooks32_BYTES_BACKUP = 24;
-	const DWORD Hooks_Hooks32_SAFE_BYTES_MIN = 5;
-	const DWORD Hooks_Hooks32_SAFE_BYTES_MAX = 19;
+	constexpr DWORD Hooks_Hooks32_BYTES_BACKUP = 24;
+	constexpr DWORD Hooks_Hooks32_SAFE_BYTES_MIN = 1 + sizeof(DWORD);
+	constexpr DWORD Hooks_Hooks32_SAFE_BYTES_MAX = Hooks_Hooks32_BYTES_BACKUP- Hooks_Hooks32_SAFE_BYTES_MIN;
 
 	class Hook32
 	{
 	private:
+		/*
+		* jmp relative_adress_to_function;
+		*/
+		const DWORD SIZE_OF_INSTRUCTION = Hooks_Hooks32_SAFE_BYTES_MIN;
 
 		PBYTE _originalCode = nullptr;
 		PBYTE _myCode = nullptr;
@@ -94,7 +98,7 @@ namespace Hooks {
 		void CheckCountOfSafeBytes(DWORD countOfSafeBytes)
 		{
 			if (countOfSafeBytes > Hooks_Hooks32_SAFE_BYTES_MAX || countOfSafeBytes < Hooks_Hooks32_SAFE_BYTES_MIN)
-				throw std::exception("countOfSafeBytes");
+				throw std::exception("Count of safe bytes issue");
 		}
 
 		void Init(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeByte)
@@ -109,13 +113,13 @@ namespace Hooks {
 
 		PBYTE CreateJmpToOririginalFuncion(DWORD safe, PBYTE adr, BYTE* originalCode)
 		{
-			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);
+			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);			
 			if (changedCode)
 			{
 				ZeroMemory(changedCode, Hooks_Hooks32_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
 				changedCode[safe] = 0xE9;
-				DWORD addr = (DWORD)(adr + safe) - (DWORD)(changedCode + safe) - 5;
+				DWORD addr = (DWORD)(adr + safe) - (DWORD)(changedCode + safe) - SIZE_OF_INSTRUCTION;
 				memcpy_s(changedCode + (safe + 1), 4, (void*)&addr, 4);
 				DWORD temp;
 				VirtualProtect(changedCode, Hooks_Hooks32_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
@@ -130,9 +134,9 @@ namespace Hooks {
 			{
 				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
 				_myCode[0] = 0xE9;
-				DWORD addr = (DWORD)newFunction - (DWORD)functionToHook - 5;
+				DWORD addr = (DWORD)newFunction - (DWORD)functionToHook - SIZE_OF_INSTRUCTION;
 				memcpy_s(_myCode + 1, 4, (void*)&addr, 4);
-				memcpy_s(functionToHook, 5, _myCode, 5);
+				memcpy_s(functionToHook, SIZE_OF_INSTRUCTION, _myCode, SIZE_OF_INSTRUCTION);
 				return true;
 			}
 

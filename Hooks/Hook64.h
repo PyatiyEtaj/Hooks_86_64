@@ -4,13 +4,18 @@
 #include <Windows.h>
 
 namespace Hooks {
-	constexpr uint64_t Hooks_Hooks32_BYTES_BACKUP = 32;
-	constexpr uint64_t Hooks_Hooks32_SAFE_BYTES_MIN = 5;
-	constexpr uint64_t Hooks_Hooks32_SAFE_BYTES_MAX = Hooks_Hooks32_BYTES_BACKUP - Hooks_Hooks32_SAFE_BYTES_MIN;
+	constexpr DWORD Hooks_Hooks64_BYTES_BACKUP = 32;
+	constexpr DWORD Hooks_Hooks64_SAFE_BYTES_MIN = 13;
+	constexpr DWORD Hooks_Hooks64_SAFE_BYTES_MAX = Hooks_Hooks64_BYTES_BACKUP - Hooks_Hooks64_SAFE_BYTES_MIN;
 
 	class Hook64
 	{
 	private:
+		/*
+		* mov r15, absolute_adress_to_function
+		* jmp r15
+		*/
+		const uintptr_t SIZE_OF_INSTRUCTION = Hooks_Hooks64_SAFE_BYTES_MIN;
 
 		PBYTE _originalCode = nullptr;
 		PBYTE _myCode = nullptr;
@@ -18,7 +23,7 @@ namespace Hooks {
 		PBYTE _startOriginalFunction = nullptr;
 		PBYTE _newFunction = 0;
 
-		uint64_t _countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN;
+		DWORD _countOfSafeByte = Hooks_Hooks64_SAFE_BYTES_MIN;
 		bool _isSetted = false;
 		bool _unsetOnDie = false;
 
@@ -35,7 +40,7 @@ namespace Hooks {
 			}
 		}
 
-		bool Set(PBYTE functionToHook, PBYTE newFunction, uint64_t countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN)
+		bool Set(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeByte = Hooks_Hooks64_SAFE_BYTES_MIN)
 		{
 			CheckCountOfSafeBytes(countOfSafeByte);
 
@@ -89,15 +94,14 @@ namespace Hooks {
 			return _startOriginalFunction;
 		}
 
-
 	private:
 		void CheckCountOfSafeBytes(uint64_t countOfSafeBytes)
 		{
-			if (countOfSafeBytes > Hooks_Hooks32_SAFE_BYTES_MAX || countOfSafeBytes < Hooks_Hooks32_SAFE_BYTES_MIN)
-				throw std::exception("countOfSafeBytes");
+			if (countOfSafeBytes > Hooks_Hooks64_SAFE_BYTES_MAX || countOfSafeBytes < Hooks_Hooks64_SAFE_BYTES_MIN)
+				throw std::exception("Count of safe bytes issue");
 		}
 
-		void Init(PBYTE functionToHook, PBYTE newFunction, uint64_t countOfSafeByte)
+		void Init(PBYTE functionToHook, PBYTE newFunction, uint32_t countOfSafeByte)
 		{
 			_originalCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
 			_myCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
@@ -107,32 +111,40 @@ namespace Hooks {
 			_isSetted = false;
 		}
 
-		PBYTE CreateJmpToOririginalFuncion(uint64_t safe, PBYTE adr, PBYTE originalCode)
+		PBYTE CreateJmpToOririginalFuncion(uintptr_t safe, PBYTE adr, PBYTE originalCode)
 		{
-			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);
+			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks64_BYTES_BACKUP);
 			if (changedCode)
 			{
-				ZeroMemory(changedCode, Hooks_Hooks32_BYTES_BACKUP);
+				ZeroMemory(changedCode, Hooks_Hooks64_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
-				changedCode[safe] = 0xE9;
-				uint64_t addr = (uint64_t)(adr + safe) - (uint64_t)(changedCode + safe) - 5;
-				memcpy_s(changedCode + (safe + 1), 4, (void*)&addr, 4);
-				uint64_t temp;
-				VirtualProtect(changedCode, Hooks_Hooks32_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
+				changedCode[safe] = 0x49;
+				changedCode[safe+1] = 0xBF;
+				changedCode[safe+10] = 0x41;
+				changedCode[safe+11] = 0xFF;
+				changedCode[safe+12] = 0xE7;
+				uintptr_t addr = (uintptr_t)(adr + safe);
+				memcpy_s(changedCode + (safe + 2), sizeof(uintptr_t), (void*)&addr, sizeof(uintptr_t));
+				DWORD temp;
+				VirtualProtect(changedCode, Hooks_Hooks64_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
 			}
 			return changedCode;
 		}
 
 		bool SetHook(PBYTE newFunction, PBYTE functionToHook)
 		{
-			uint64_t oldProtectDip = 0;
-			if (VirtualProtect((PBYTE)functionToHook, 8, PAGE_EXECUTE_READWRITE, &oldProtectDip))
+			DWORD oldProtectDip = 0;
+			if (VirtualProtect((PBYTE)functionToHook, 16, PAGE_EXECUTE_READWRITE, &oldProtectDip))
 			{
 				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
-				_myCode[0] = 0xE9;
-				uint64_t addr = (uint64_t)newFunction - (uint64_t)functionToHook - 5;
-				memcpy_s(_myCode + 1, 4, (void*)&addr, 4);
-				memcpy_s(functionToHook, 5, _myCode, 5);
+				_myCode[0] = 0x49;
+				_myCode[1] = 0xBF;
+				_myCode[10] = 0x41;
+				_myCode[11] = 0xFF;
+				_myCode[12] = 0xE7;
+				uintptr_t addr = (uintptr_t)newFunction;
+				memcpy_s(_myCode + 2, sizeof(uintptr_t), (void*)&addr, sizeof(uintptr_t));
+				memcpy_s(functionToHook, SIZE_OF_INSTRUCTION, _myCode, SIZE_OF_INSTRUCTION);
 				return true;
 			}
 
