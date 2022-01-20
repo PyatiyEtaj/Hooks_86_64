@@ -1,6 +1,5 @@
 #include <iostream>
 #include "Hook32.h"
-#include "HookSetter.h"
 
 // RELEASE
 /* 6 bytes

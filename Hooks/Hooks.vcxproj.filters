@@ -18,18 +18,15 @@
     <ClCompile Include="main.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="D:\code\C++\FO3Hax\FO3Dll\HookSetter.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hook32.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="D:\code\C++\FO3Hax\FO3Dll\HookSetter.h">
+    <ClInclude Include="Hook64.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Hook64.h">
+    <ClInclude Include="HookUtil.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

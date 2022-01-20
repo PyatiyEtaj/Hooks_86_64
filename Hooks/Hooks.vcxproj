@@ -139,13 +139,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="D:\code\C++\FO3Hax\FO3Dll\HookSetter.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\code\C++\FO3Hax\FO3Dll\HookSetter.h" />
     <ClInclude Include="Hook32.h" />
     <ClInclude Include="Hook64.h" />
+    <ClInclude Include="HookUtil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

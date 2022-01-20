@@ -3,21 +3,10 @@
 #include <iostream>
 #include <Windows.h>
 
-#define GoToOriginalVoidFunction(type, hook32, ...) \
-	type exit = (type)(hook32->GetStartOfOriginalFunction()); \
-	exit(__VA_ARGS__);
-
-
-#define GoToOriginalFunction(type, hook32, ...) \
-	type exit = (type)(hook32->GetStartOfOriginalFunction()); \
-	return exit(__VA_ARGS__);
-	
-#define GoToOriginalFunction2(type, hook32, ...) ((type)(hook32->GetStartOfOriginalFunction()))(__VA_ARGS__)
-
 namespace Hooks {
-	const uint32_t Hooks_Hooks32_BYTES_BACKUP = 24;
-	const uint32_t Hooks_Hooks32_SAFE_BYTES_MIN = 5;
-	const uint32_t Hooks_Hooks32_SAFE_BYTES_MAX = 19;
+	const DWORD Hooks_Hooks32_BYTES_BACKUP = 24;
+	const DWORD Hooks_Hooks32_SAFE_BYTES_MIN = 5;
+	const DWORD Hooks_Hooks32_SAFE_BYTES_MAX = 19;
 
 	class Hook32
 	{
@@ -29,7 +18,7 @@ namespace Hooks {
 		PBYTE _startOriginalFunction = nullptr;
 		PBYTE _newFunction = 0;
 
-		uint32_t _countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN;
+		DWORD _countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN;
 		bool _isSetted = false;
 		bool _unsetOnDie = false;
 
@@ -46,7 +35,7 @@ namespace Hooks {
 			}
 		}
 
-		bool Set(PBYTE functionToHook, PBYTE newFunction, uint32_t countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN)
+		bool Set(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeByte = Hooks_Hooks32_SAFE_BYTES_MIN)
 		{
 			CheckCountOfSafeBytes(countOfSafeByte);
 
@@ -102,13 +91,13 @@ namespace Hooks {
 
 
 	private:
-		void CheckCountOfSafeBytes(uint32_t countOfSafeBytes)
+		void CheckCountOfSafeBytes(DWORD countOfSafeBytes)
 		{
 			if (countOfSafeBytes > Hooks_Hooks32_SAFE_BYTES_MAX || countOfSafeBytes < Hooks_Hooks32_SAFE_BYTES_MIN)
 				throw std::exception("countOfSafeBytes");
 		}
 
-		void Init(PBYTE functionToHook, PBYTE newFunction, uint32_t countOfSafeByte)
+		void Init(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeByte)
 		{
 			_originalCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
 			_myCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
@@ -118,7 +107,7 @@ namespace Hooks {
 			_isSetted = false;
 		}
 
-		PBYTE CreateJmpToOririginalFuncion(uint32_t safe, PBYTE adr, BYTE* originalCode)
+		PBYTE CreateJmpToOririginalFuncion(DWORD safe, PBYTE adr, BYTE* originalCode)
 		{
 			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);
 			if (changedCode)
@@ -126,9 +115,9 @@ namespace Hooks {
 				ZeroMemory(changedCode, Hooks_Hooks32_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
 				changedCode[safe] = 0xE9;
-				uint32_t addr = (uint32_t)(adr + safe) - (uint32_t)(changedCode + safe) - 5;
+				DWORD addr = (DWORD)(adr + safe) - (DWORD)(changedCode + safe) - 5;
 				memcpy_s(changedCode + (safe + 1), 4, (void*)&addr, 4);
-				uint32_t temp;
+				DWORD temp;
 				VirtualProtect(changedCode, Hooks_Hooks32_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
 			}
 			return changedCode;
@@ -136,12 +125,12 @@ namespace Hooks {
 
 		bool SetHook(PBYTE newFunction, PBYTE functionToHook)
 		{
-			uint32_t oldProtectDip = 0;
+			DWORD oldProtectDip = 0;
 			if (VirtualProtect((PBYTE)functionToHook, 8, PAGE_EXECUTE_READWRITE, &oldProtectDip))
 			{
 				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
 				_myCode[0] = 0xE9;
-				uint32_t addr = (uint32_t)newFunction - (uint32_t)functionToHook - 5;
+				DWORD addr = (DWORD)newFunction - (DWORD)functionToHook - 5;
 				memcpy_s(_myCode + 1, 4, (void*)&addr, 4);
 				memcpy_s(functionToHook, 5, _myCode, 5);
 				return true;
