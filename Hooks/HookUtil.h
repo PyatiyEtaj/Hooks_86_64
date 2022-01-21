@@ -33,12 +33,12 @@
 
 namespace Hooks
 {
-	int VMTHOOK32(int** vptr, int vmtNumber, void* function)
+	int VMTHOOK32(PDWORD* vptr, int vmtNumber, void* function)
 	{
 		DWORD temp;
 		int originalFunction = vptr[0][vmtNumber];
 		if (VirtualProtect(*vptr, 4, PAGE_EXECUTE_READWRITE, &temp)) {
-			vptr[0][vmtNumber] = (int)function;
+			vptr[0][vmtNumber] = (DWORD)function;
 		}
 		return originalFunction;
 	}
@@ -48,8 +48,25 @@ namespace Hooks
 		DWORD temp;
 		int originalFunction = vptr[vmtNumber];
 		if (VirtualProtect(vptr, 4, PAGE_EXECUTE_READWRITE, &temp)) {
-			vptr[vmtNumber] = (int)function;
+			vptr[vmtNumber] = (DWORD)function;
 		}
 		return originalFunction;
+	}
+
+	bool DetourFunc32(PBYTE adrOld, PBYTE adrNew, bool replaceByJmpE9 = false)
+	{
+		if (adrOld == nullptr || adrNew == nullptr)
+		{
+			return false;
+		}
+
+		DWORD off = (DWORD)adrNew - (DWORD)adrOld - 5;
+		if (replaceByJmpE9)
+		{
+			memcpy_s((void*)(adrOld), 1, "\xE9", 1);
+		}
+		memcpy_s((void*)(adrOld + 1), 4, (void*)&off, 4);
+
+		return true;
 	}
 }
