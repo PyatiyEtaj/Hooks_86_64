@@ -2,9 +2,7 @@
 #include "Hook64.h"
 #include "Hook32.h"
 
-// COMPILE IN RELEASE MODE ONLY
-
-//7FF619A41250
+// THE HOOKS WORK CORRECTLY ONLY IN RELEASE MODE
 
 #if _WIN64
 /* x64
@@ -26,7 +24,7 @@ int __stdcall PrintArgs(int argc, char** argv)
 */
 DWORD CountOfSafeBytes = 6;
 #endif
-int __stdcall PrintArgs(int argc, char** argv)
+int PrintArgs(int argc, char** argv)
 {
 	for (size_t i = 0; i < argc; i++)
 	{
@@ -41,7 +39,7 @@ int Hooked64_PrintArgs(int argc, char** argv)
 {
 	std::cout << "HOOKED64" << std::endl;
 
-	typedef int(__stdcall* orig)(int, char**);
+	typedef int(* orig)(int, char**);
 	orig exit = (orig)(hook64->GetStartOfOriginalFunction());
 	int result = exit(argc, argv);
 
@@ -69,20 +67,20 @@ int main(int argc, char** argv)
 	PrintArgs(argc, argv);
 		
 #if _WIN64
-	std::cout << "[x64] STEP 2" << std::endl;
+	std::cout << std::endl << "[x64] STEP 2" << std::endl;
 	if (hook64->Set((PBYTE)PrintArgs, (PBYTE)Hooked64_PrintArgs, CountOfSafeBytes))
 	{
 		PrintArgs(argc, argv);
 	}
 #elif _WIN32
-	std::cout << "[x86] STEP 2" << std::endl;
+	std::cout << std::endl << "[x86] STEP 2" << std::endl;
 	if (hook32->Set((PBYTE)PrintArgs, (PBYTE)Hooked32_PrintArgs, CountOfSafeBytes))
 	{
 		PrintArgs(argc, argv);
 	}	
 #endif
 
-	std::cout << "STEP 3" << std::endl;
+	std::cout << std::endl << "STEP 3" << std::endl;
 #if _WIN64
 	delete hook64;
 #elif _WIN32
