@@ -95,7 +95,7 @@ namespace Hooks {
 		}
 
 	private:
-		void CheckCountOfSafeBytes(uint64_t countOfSafeBytes)
+		void CheckCountOfSafeBytes(DWORD countOfSafeBytes)
 		{
 			if (countOfSafeBytes > Hooks_Hooks64_SAFE_BYTES_MAX || countOfSafeBytes < Hooks_Hooks64_SAFE_BYTES_MIN)
 				throw std::exception("Count of safe bytes issue");
@@ -123,8 +123,8 @@ namespace Hooks {
 				changedCode[safe+10] = 0x41;
 				changedCode[safe+11] = 0xFF;
 				changedCode[safe+12] = 0xE7;
-				uintptr_t addr = (uintptr_t)(adr + safe);
-				memcpy_s(changedCode + (safe + 2), sizeof(uintptr_t), (void*)&addr, sizeof(uintptr_t));
+				uintptr_t absolute = (uintptr_t)(adr + safe);
+				memcpy_s(changedCode + (safe + 2), sizeof(uintptr_t), (void*)&absolute, sizeof(uintptr_t));
 				DWORD temp;
 				VirtualProtect(changedCode, Hooks_Hooks64_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
 			}
@@ -142,8 +142,8 @@ namespace Hooks {
 				_myCode[10] = 0x41;
 				_myCode[11] = 0xFF;
 				_myCode[12] = 0xE7;
-				uintptr_t addr = (uintptr_t)newFunction;
-				memcpy_s(_myCode + 2, sizeof(uintptr_t), (void*)&addr, sizeof(uintptr_t));
+				uintptr_t absolute = (uintptr_t)newFunction;
+				memcpy_s(_myCode + 2, sizeof(uintptr_t), (void*)&absolute, sizeof(uintptr_t));
 				memcpy_s(functionToHook, SIZE_OF_INSTRUCTION, _myCode, SIZE_OF_INSTRUCTION);
 				return true;
 			}

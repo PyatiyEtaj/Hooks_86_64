@@ -88,6 +88,5 @@ int main(int argc, char** argv)
 #endif
 	PrintArgs(argc, argv);
 
-	getchar();
 	return 0;
 }
