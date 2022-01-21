@@ -34,9 +34,9 @@ bool Set (
 For example you have function like this `[x86]`
 ```
 int __stdcall PrintArgs(int argc, char** argv)
-	000A1320 55                   push        ebp  
-	000A1321 8B EC                mov         ebp,esp  
-	000A1323 83 E4 F8             and         esp,0FFFFFFF8h
+    000A1320 55                   push        ebp
+    000A1321 8B EC                mov         ebp,esp
+    000A1323 83 E4 F8             and         esp,0FFFFFFF8h
 ```
 In Hook32, you need 5 bytes for the jmp instruction, but if you want to use the original function in the Hooked version, you need to pass 6 (in other function it may be bigger), because if you pass 5, the original instructions will be destroyed.
 It works this way because of the rewriting of the original instructions. 
@@ -44,17 +44,17 @@ It works this way because of the rewriting of the original instructions.
 View after set hook32:
 ```
 int __stdcall PrintArgs(int argc, char** argv)
-	000A1320 E9 AB CD EF FF       jmp   0xABCDEDFF  ; jmp to our Hook function
-	000A1325 F8                   ??    ?? ?? ?? ?? ; ruined
+    000A1320 E9 AB CD EF FF       jmp   0xABCDEDFF  ; jmp to our Hook function
+    000A1325 F8                   ??    ?? ?? ?? ?? ; ruined
 ```
 
 Call original function. In our buffer it looks like:
 ```
 our buffer:
     ; original instructions
-    000F1320 55                   push   ebp  
-	000F1321 8B EC                mov    ebp,esp  
-	000F1323 83 E4 F8             and    esp,0FFFFFFF8h
+    000F1320 55                   push   ebp
+    000F1321 8B EC                mov    ebp,esp
+    000F1323 83 E4 F8             and    esp,0FFFFFFF8h
     ; jmp to original PrintArgs+6 function
     000F1326 E9 00 0A 13 26       jmp    0x000A1326
 ```
