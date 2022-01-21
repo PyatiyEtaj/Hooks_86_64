@@ -2,8 +2,6 @@
 #include "Hook64.h"
 #include "Hook32.h"
 
-// THE HOOKS WORK CORRECTLY ONLY IN RELEASE MODE
-
 #if _WIN64
 /* x64
  * 15 bytes
@@ -26,7 +24,7 @@ DWORD CountOfSafeBytes = 6;
 #endif
 int PrintArgs(int argc, char** argv)
 {
-	for (size_t i = 0; i < argc; i++)
+	for (int i = 0; i < argc; i++)
 	{
 		std::cout << "[" << i << "] " << argv[i] << std::endl;
 	}
@@ -61,7 +59,7 @@ int Hooked32_PrintArgs(int argc, char** argv)
 }
 #endif
 
-int main(int argc, char** argv)
+int _cdecl main(int argc, char** argv)
 {
 	std::cout << "STEP 1" << std::endl;
 	PrintArgs(argc, argv);
