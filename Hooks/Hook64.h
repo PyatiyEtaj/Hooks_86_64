@@ -11,14 +11,7 @@ namespace Hooks {
 	class Hook64
 	{
 	private:
-		/*
-		* mov r15, absolute_adress_to_function
-		* jmp r15
-		*/
-		const uintptr_t SIZE_OF_INSTRUCTION = Hooks_Hooks64_SAFE_BYTES_MIN;
-
 		PBYTE _originalCode = nullptr;
-		PBYTE _myCode = nullptr;
 		PBYTE _functionToHook = nullptr;
 		PBYTE _startOriginalFunction = nullptr;
 		PBYTE _newFunction = 0;
@@ -79,12 +72,6 @@ namespace Hooks {
 					_startOriginalFunction = nullptr;
 				}
 
-				if (_myCode != nullptr)
-				{
-					free(_myCode);
-					_myCode = nullptr;
-				}
-
 				_isSetted = false;
 			}
 		}
@@ -104,7 +91,6 @@ namespace Hooks {
 		void Init(PBYTE functionToHook, PBYTE newFunction, uint32_t countOfSafeByte)
 		{
 			_originalCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
-			_myCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
 			_functionToHook = functionToHook;
 			_newFunction = newFunction;
 			_countOfSafeByte = countOfSafeByte;
@@ -118,13 +104,10 @@ namespace Hooks {
 			{
 				ZeroMemory(changedCode, Hooks_Hooks64_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
-				changedCode[safe] = 0x49;
-				changedCode[safe+1] = 0xBF;
-				changedCode[safe+10] = 0x41;
-				changedCode[safe+11] = 0xFF;
-				changedCode[safe+12] = 0xE7;
-				uintptr_t absolute = (uintptr_t)(adr + safe);
-				memcpy_s(changedCode + (safe + 2), sizeof(uintptr_t), (void*)&absolute, sizeof(uintptr_t));
+				constexpr BYTE jmp[] = { 0x49, 0xBF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0xFF, 0xE7 };
+				*((uintptr_t*)(jmp + 2)) = (uintptr_t)(adr + safe);
+				memcpy_s(changedCode + safe, sizeof(jmp), jmp, sizeof(jmp));
+
 				DWORD temp;
 				VirtualProtect(changedCode, Hooks_Hooks64_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
 			}
@@ -134,17 +117,13 @@ namespace Hooks {
 		bool SetHook(PBYTE newFunction, PBYTE functionToHook)
 		{
 			DWORD oldProtectDip = 0;
-			if (VirtualProtect((PBYTE)functionToHook, 16, PAGE_EXECUTE_READWRITE, &oldProtectDip))
+			if (VirtualProtect(functionToHook, 16, PAGE_EXECUTE_READWRITE, &oldProtectDip))
 			{
 				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
-				_myCode[0] = 0x49;
-				_myCode[1] = 0xBF;
-				_myCode[10] = 0x41;
-				_myCode[11] = 0xFF;
-				_myCode[12] = 0xE7;
-				uintptr_t absolute = (uintptr_t)newFunction;
-				memcpy_s(_myCode + 2, sizeof(uintptr_t), (void*)&absolute, sizeof(uintptr_t));
-				memcpy_s(functionToHook, SIZE_OF_INSTRUCTION, _myCode, SIZE_OF_INSTRUCTION);
+				constexpr BYTE jmp[] = { 0x49, 0xBF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0xFF, 0xE7 };
+				*((uintptr_t*)(jmp + 2)) = (uintptr_t)newFunction;
+				memcpy_s(functionToHook, sizeof(jmp), jmp, sizeof(jmp));
+
 				return true;
 			}
 

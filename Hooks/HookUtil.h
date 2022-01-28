@@ -18,21 +18,27 @@
 		_asm { jmp eax}
 #endif
 
-#define GO_TO_ORIGINAL_VOID_FUNCTION(type, hook32, ...) \
-	type exit = (type)(hook32->GetStartOfOriginalFunction()); \
-	exit(__VA_ARGS__);
-
-
-#define GO_TO_ORIGINAL_FUNCTION(type, hook32, ...) \
-	type exit = (type)(hook32->GetStartOfOriginalFunction()); \
-	return exit(__VA_ARGS__);
-
-#define GO_TO_ORIGINAL_VOID_FUNCTION2(type, hook32, ...) ((type)(hook32->GetStartOfOriginalFunction()))(__VA_ARGS__)
-
 // ============================================
 
 namespace Hooks
 {
+	template<typename T, typename ...A>
+	T CallOriginalFunction(void* functionPtr, A ...args) {
+		constexpr auto call_void = std::is_same_v<T, void>;
+		using function = T(__stdcall*)(A...);
+		const auto orig = static_cast<function>(functionPtr);
+		if constexpr (call_void)
+		{
+			orig(args...);
+		}
+		else
+		{
+			return orig(args...);
+		}
+
+		return (T)0;
+	}
+
 	int VMTHOOK32(PDWORD* vptr, int vmtNumber, void* function)
 	{
 		DWORD temp;

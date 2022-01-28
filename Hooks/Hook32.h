@@ -6,7 +6,7 @@
 namespace Hooks {
 	constexpr DWORD Hooks_Hooks32_BYTES_BACKUP = 24;
 	constexpr DWORD Hooks_Hooks32_SAFE_BYTES_MIN = 1 + sizeof(DWORD);
-	constexpr DWORD Hooks_Hooks32_SAFE_BYTES_MAX = Hooks_Hooks32_BYTES_BACKUP- Hooks_Hooks32_SAFE_BYTES_MIN;
+	constexpr DWORD Hooks_Hooks32_SAFE_BYTES_MAX = Hooks_Hooks32_BYTES_BACKUP - Hooks_Hooks32_SAFE_BYTES_MIN;
 
 	class Hook32
 	{
@@ -113,14 +113,16 @@ namespace Hooks {
 
 		PBYTE CreateJmpToOririginalFuncion(DWORD safe, PBYTE adr, BYTE* originalCode)
 		{
-			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);			
+			PBYTE changedCode = (PBYTE)malloc(Hooks_Hooks32_BYTES_BACKUP);
 			if (changedCode)
 			{
 				ZeroMemory(changedCode, Hooks_Hooks32_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
-				changedCode[safe] = 0xE9;
-				DWORD relative = (DWORD)(adr + safe) - (DWORD)(changedCode + safe) - SIZE_OF_INSTRUCTION;
-				memcpy_s(changedCode + (safe + 1), 4, (void*)&relative, 4);
+				constexpr BYTE jmp[] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
+				DWORD relative = (DWORD)(adr + safe) - (DWORD)(changedCode + safe) - sizeof(jmp);
+				*(PDWORD)(jmp + 1) = relative;
+				memcpy_s(changedCode + safe, sizeof(jmp), jmp, sizeof(jmp));
+
 				DWORD temp;
 				VirtualProtect(changedCode, Hooks_Hooks32_BYTES_BACKUP, PAGE_EXECUTE_READWRITE, &temp);
 			}
@@ -133,10 +135,10 @@ namespace Hooks {
 			if (VirtualProtect((PBYTE)functionToHook, 8, PAGE_EXECUTE_READWRITE, &oldProtectDip))
 			{
 				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
-				_myCode[0] = 0xE9;
-				DWORD relative = (DWORD)newFunction - (DWORD)functionToHook - SIZE_OF_INSTRUCTION;
-				memcpy_s(_myCode + 1, 4, (void*)&relative, 4);
-				memcpy_s(functionToHook, SIZE_OF_INSTRUCTION, _myCode, SIZE_OF_INSTRUCTION);
+				constexpr BYTE jmp[] = { 0xE9, 0x00, 0x00, 0x00, 0x00 };
+				DWORD relative = (DWORD)newFunction - (DWORD)functionToHook - sizeof(jmp);
+				*(PDWORD)(jmp + 1) = relative;
+				memcpy_s(functionToHook, sizeof(jmp), jmp, sizeof(jmp));
 				return true;
 			}
 

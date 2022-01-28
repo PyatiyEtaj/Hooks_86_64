@@ -1,4 +1,5 @@
 #include <iostream>
+#include "HookUtil.h"
 #include "Hook64.h"
 #include "Hook32.h"
 
@@ -28,7 +29,7 @@ int PrintArgs(int argc, char** argv)
 	{
 		std::cout << "[" << i << "] " << argv[i] << std::endl;
 	}
-	return 0;
+	return 1488;
 }
 
 #if _WIN64
@@ -37,11 +38,14 @@ int Hooked64_PrintArgs(int argc, char** argv)
 {
 	std::cout << "HOOKED64" << std::endl;
 
-	typedef int(* orig)(int, char**);
+	// C99 style
+	/*typedef int(* orig)(int, char**);
 	orig exit = (orig)(hook64->GetStartOfOriginalFunction());
-	int result = exit(argc, argv);
+	int result = exit(argc, argv);*/
+	// C++17 style
+	const auto result = Hooks::CallOriginalFunction<int>((void*)hook64->GetStartOfOriginalFunction(), argc, argv);
 
-	std::cout << "END HOOKED64" << std::endl;
+	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
 	return result;
 }
 #elif _WIN32
@@ -50,11 +54,14 @@ int Hooked32_PrintArgs(int argc, char** argv)
 {
 	std::cout << "HOOKED32" << std::endl;
 
-	typedef int(__stdcall* orig)(int, char**);
+	// C99 style
+	/*typedef int(__stdcall* orig)(int, char**);
 	orig exit = (orig)(hook32->GetStartOfOriginalFunction());
-	int result = exit(argc, argv);
+	int result = exit(argc, argv);*/
+	// C++17 style
+	const int result = Hooks::CallOriginalFunction<int>((void*)hook32->GetStartOfOriginalFunction(), argc, argv);
 
-	std::cout << "END HOOKED32" << std::endl;
+	std::cout << "END HOOKED32 [" << result << "]" << std::endl;
 	return result;
 }
 #endif
@@ -85,6 +92,6 @@ int _cdecl main(int argc, char** argv)
 	delete hook32;
 #endif
 	PrintArgs(argc, argv);
-
+	getchar();
 	return 0;
 }
