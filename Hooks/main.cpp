@@ -43,7 +43,7 @@ int Hooked64_PrintArgs(int argc, char** argv)
 	orig exit = (orig)(hook64->GetStartOfOriginalFunction());
 	int result = exit(argc, argv);*/
 	// C++17 style
-	const auto result = Hooks::CallOriginalFunction<int>((void*)hook64->GetStartOfOriginalFunction(), argc, argv);
+	const auto result = Hooks::CallOriginalFunction<int>(hook64->GetStartOfOriginalFunction(), argc, argv);
 
 	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
 	return result;
@@ -59,7 +59,7 @@ int Hooked32_PrintArgs(int argc, char** argv)
 	orig exit = (orig)(hook32->GetStartOfOriginalFunction());
 	int result = exit(argc, argv);*/
 	// C++17 style
-	const int result = Hooks::CallOriginalFunction<int>((void*)hook32->GetStartOfOriginalFunction(), argc, argv);
+	const int result = Hooks::CallOriginalFunction<int>(hook32->GetStartOfOriginalFunction(), argc, argv);
 
 	std::cout << "END HOOKED32 [" << result << "]" << std::endl;
 	return result;
