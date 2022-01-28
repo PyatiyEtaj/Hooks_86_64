@@ -92,6 +92,6 @@ int _cdecl main(int argc, char** argv)
 	delete hook32;
 #endif
 	PrintArgs(argc, argv);
-	getchar();
+
 	return 0;
 }
