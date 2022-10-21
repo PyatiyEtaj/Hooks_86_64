@@ -20,7 +20,7 @@ jmp  rax
 pop  rax ; at the end of the safe space
 ```
   + Minimum bytes needed for hook64 is 14
-  + There is some restoring `rax` code, it might troubles
+  + There is a rax recovery code, there may be problems
 
 # How to use
 
