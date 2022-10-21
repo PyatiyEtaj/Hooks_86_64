@@ -16,7 +16,7 @@ namespace Hooks {
 		PBYTE _startOriginalFunction = nullptr;
 		PBYTE _newFunction = 0;
 
-		DWORD _countOfSafeByte = Hooks_Hooks64_SAFE_BYTES_MIN;
+		DWORD _countOfSafeBytes = Hooks_Hooks64_SAFE_BYTES_MIN;
 		bool _isSetted = false;
 		bool _unsetOnDie = false;
 
@@ -33,15 +33,15 @@ namespace Hooks {
 			}
 		}
 
-		bool Set(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeByte = Hooks_Hooks64_SAFE_BYTES_MIN)
+		bool Set(PBYTE functionToHook, PBYTE newFunction, DWORD countOfSafeBytes = Hooks_Hooks64_SAFE_BYTES_MIN)
 		{
-			CheckCountOfSafeBytes(countOfSafeByte);
+			CheckCountOfSafeBytes(countOfSafeBytes);
 
 			if (!_isSetted)
 			{
-				Init(functionToHook, newFunction, countOfSafeByte);
+				Init(functionToHook, newFunction, countOfSafeBytes);
 				if (SetHook(_newFunction, _functionToHook)) {
-					_startOriginalFunction = CreateJmpToOririginalFuncion(_countOfSafeByte, _functionToHook, _originalCode);
+					_startOriginalFunction = CreateJmpToOririginalFuncion(_countOfSafeBytes, _functionToHook, _originalCode);
 					_isSetted = true;
 
 					return true;
@@ -57,7 +57,7 @@ namespace Hooks {
 			{
 				if (_originalCode != nullptr && _functionToHook != nullptr)
 				{
-					memcpy_s(_functionToHook, _countOfSafeByte, _originalCode, _countOfSafeByte);
+					memcpy_s(_functionToHook, _countOfSafeBytes, _originalCode, _countOfSafeBytes);
 				}
 
 				if (_originalCode != nullptr)
@@ -93,7 +93,7 @@ namespace Hooks {
 			_originalCode = (PBYTE)calloc(countOfSafeByte, sizeof(BYTE));
 			_functionToHook = functionToHook;
 			_newFunction = newFunction;
-			_countOfSafeByte = countOfSafeByte;
+			_countOfSafeBytes = countOfSafeByte;
 			_isSetted = false;
 		}
 
@@ -104,8 +104,13 @@ namespace Hooks {
 			{
 				ZeroMemory(changedCode, Hooks_Hooks64_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
-				constexpr BYTE jmp[] = { 0x49, 0xBF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0xFF, 0xE7 };
-				*((uintptr_t*)(jmp + 2)) = (uintptr_t)(adr + safe);
+				constexpr BYTE jmp[] = {
+					0x50,														// push rax			0x50
+					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov	rax, addr	0x48 0xB8 ....
+					0xFF, 0xE0													// jmp	rax			0xFF 0xE0
+				};
+				// 'adr + safe - 1' contains rax restoring code
+				*((uintptr_t*)(jmp + 3)) = (uintptr_t)(adr + safe - 1);
 				memcpy_s(changedCode + safe, sizeof(jmp), jmp, sizeof(jmp));
 
 				DWORD temp;
@@ -116,12 +121,27 @@ namespace Hooks {
 
 		bool SetHook(PBYTE newFunction, PBYTE functionToHook)
 		{
+			// check free space for 'pop rax'
+			// if (*(newFunction - 1) != 0xCC) return false;
+
 			DWORD oldProtectDip = 0;
 			if (VirtualProtect(functionToHook, 16, PAGE_EXECUTE_READWRITE, &oldProtectDip))
 			{
-				memcpy_s(_originalCode, _countOfSafeByte, functionToHook, _countOfSafeByte);
-				constexpr BYTE jmp[] = { 0x49, 0xBF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0xFF, 0xE7 };
-				*((uintptr_t*)(jmp + 2)) = (uintptr_t)newFunction;
+				memcpy_s(_originalCode, _countOfSafeBytes, functionToHook, _countOfSafeBytes);
+
+				// jump with rax restoring
+				constexpr BYTE jmp[] = { 
+					0x50,														// push rax			0x50
+					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov	rax, addr	0x48 0xB8 ....
+					0xFF, 0xE0													// jmp	rax			0xFF 0xE0
+				};
+				*((uintptr_t*)(jmp + 3)) = (uintptr_t)(newFunction - 1);
+
+				// restore rax after jump to orig function from hooked
+				*(functionToHook + _countOfSafeBytes - 1) = 0x58;	// pop rax 0x58
+				// restore rax after jump to hooked func from orig
+				*(newFunction - 1) = 0x58;							// pop rax 0x58
+
 				memcpy_s(functionToHook, sizeof(jmp), jmp, sizeof(jmp));
 
 				return true;

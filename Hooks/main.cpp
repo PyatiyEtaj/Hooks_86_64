@@ -23,8 +23,9 @@ int __stdcall PrintArgs(int argc, char** argv)
 */
 DWORD CountOfSafeBytes = 6;
 #endif
-int PrintArgs(int argc, char** argv)
+int __stdcall PrintArgs(int argc, char** argv)
 {
+	std::cout << "ORIG PrintArgs [" << argc << "]" << std::endl;
 	for (int i = 0; i < argc; i++)
 	{
 		std::cout << "[" << i << "] " << argv[i] << std::endl;
@@ -32,21 +33,33 @@ int PrintArgs(int argc, char** argv)
 	return 1488;
 }
 
+int SomeCalculations(int r, int k)
+{
+	int some = 0;
+	for (int i = 0; i < 123; i++)
+	{
+		some += i;
+	}
+	return some + r + k;
+}
+
 #if _WIN64
 Hooks::Hook64* hook64 = new Hooks::Hook64(true);
 int Hooked64_PrintArgs(int argc, char** argv)
 {
-	std::cout << "HOOKED64" << std::endl;
+	std::cout << "HOOKED64 " << argc << std::endl;
 
 	// C99 style
 	/*typedef int(* orig)(int, char**);
 	orig exit = (orig)(hook64->GetStartOfOriginalFunction());
 	int result = exit(argc, argv);*/
 	// C++17 style
-	const auto result = Hooks::CallOriginalFunction<int>(hook64->GetStartOfOriginalFunction(), argc, argv);
+	int result = Hooks::CallOriginalFunction<int>(hook64->GetStartOfOriginalFunction(), argc, argv);
+	
+	int capital = SomeCalculations(result, result + 123);
 
 	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
-	return result;
+	return capital;
 }
 #elif _WIN32
 Hooks::Hook32* hook32 = new Hooks::Hook32(true);
@@ -59,39 +72,45 @@ int Hooked32_PrintArgs(int argc, char** argv)
 	orig exit = (orig)(hook32->GetStartOfOriginalFunction());
 	int result = exit(argc, argv);*/
 	// C++17 style
-	const int result = Hooks::CallOriginalFunction<int>(hook32->GetStartOfOriginalFunction(), argc, argv);
+	int result = Hooks::CallOriginalFunction<int>(hook32->GetStartOfOriginalFunction(), argc, argv);
 
-	std::cout << "END HOOKED32 [" << result << "]" << std::endl;
-	return result;
+	int capital = SomeStrong(result);
+
+	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
+	return capital;
 }
 #endif
 
-int _cdecl main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	std::cout << "STEP 1" << std::endl;
-	PrintArgs(argc, argv);
+	int res = PrintArgs(argc, argv);
 		
 #if _WIN64
 	std::cout << std::endl << "[x64] STEP 2" << std::endl;
 	if (hook64->Set((PBYTE)PrintArgs, (PBYTE)Hooked64_PrintArgs, CountOfSafeBytes))
 	{
-		PrintArgs(argc, argv);
+		res = PrintArgs(argc, argv);
+		std::cout << "Result of HOOKED PrintArgs " << res << std::endl;
 	}
 #elif _WIN32
 	std::cout << std::endl << "[x86] STEP 2" << std::endl;
 	if (hook32->Set((PBYTE)PrintArgs, (PBYTE)Hooked32_PrintArgs, CountOfSafeBytes))
 	{
-		PrintArgs(argc, argv);
+		res = PrintArgs(argc, argv);
+		std::cout << "Result of HOOKED PrintArgs " << res << std::endl;
 	}	
 #endif
 
-	std::cout << std::endl << "STEP 3" << std::endl;
+	std::cout << std::endl << "STEP 3 [" << argc << "]" << std::endl;
 #if _WIN64
 	delete hook64;
 #elif _WIN32
 	delete hook32;
 #endif
-	PrintArgs(argc, argv);
+	res = PrintArgs(argc, argv);
+	std::cout << "Result of ORIG PrintArgs " << res << std::endl;
 
+	system("pause");
 	return 0;
 }

@@ -13,11 +13,14 @@ jmp relative_address
 
 # Hook64
 ```asm
-mov r15, absolute_address
-jmp r15
+push rax
+mov  rax, absolute_address
+jmp  rax
+; junk
+pop  rax ; at the end of the safe space
 ```
-  + Minimum bytes needed for hook64 is 13
-  + Might cause problems if r15 contains information (so it's not very safe)
+  + Minimum bytes needed for hook64 is 14
+  + There is some restoring `rax` code, it might troubles
 
 # How to use
 
