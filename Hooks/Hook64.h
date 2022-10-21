@@ -105,9 +105,9 @@ namespace Hooks {
 				ZeroMemory(changedCode, Hooks_Hooks64_BYTES_BACKUP);
 				memcpy_s(changedCode, safe, originalCode, safe);
 				constexpr BYTE jmp[] = {
-					0x50,														// push rax			0x50
-					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov	rax, addr	0x48 0xB8 ....
-					0xFF, 0xE0													// jmp	rax			0xFF 0xE0
+					0x50,                                                       // push rax         0x50
+					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov  rax, addr   0x48 0xB8 ....
+					0xFF, 0xE0                                                  // jmp  rax         0xFF 0xE0
 				};
 				// 'adr + safe - 1' contains rax restoring code
 				*((uintptr_t*)(jmp + 3)) = (uintptr_t)(adr + safe - 1);
@@ -131,16 +131,16 @@ namespace Hooks {
 
 				// jump with rax restoring
 				constexpr BYTE jmp[] = { 
-					0x50,														// push rax			0x50
-					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov	rax, addr	0x48 0xB8 ....
-					0xFF, 0xE0													// jmp	rax			0xFF 0xE0
+					0x50,                                                       // push rax         0x50
+					0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov  rax, addr   0x48 0xB8 ....
+					0xFF, 0xE0                                                  // jmp  rax         0xFF 0xE0
 				};
 				*((uintptr_t*)(jmp + 3)) = (uintptr_t)(newFunction - 1);
 
 				// restore rax after jump to orig function from hooked
-				*(functionToHook + _countOfSafeBytes - 1) = 0x58;	// pop rax 0x58
+				*(functionToHook + _countOfSafeBytes - 1) = 0x58;   // pop rax 0x58
 				// restore rax after jump to hooked func from orig
-				*(newFunction - 1) = 0x58;							// pop rax 0x58
+				*(newFunction - 1) = 0x58;                          // pop rax 0x58
 
 				memcpy_s(functionToHook, sizeof(jmp), jmp, sizeof(jmp));
 
