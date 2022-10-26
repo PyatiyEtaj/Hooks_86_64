@@ -56,10 +56,10 @@ int Hooked64_PrintArgs(int argc, char** argv)
 	// C++17 style
 	int result = Hooks::CallOriginalFunction<int>(hook64->GetStartOfOriginalFunction(), argc, argv);
 	
-	int capital = SomeCalculations(result, result + 123);
+	int myResult = SomeCalculations(result, result + 123);
 
 	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
-	return capital;
+	return myResult;
 }
 #elif _WIN32
 Hooks::Hook32* hook32 = new Hooks::Hook32(true);
@@ -74,10 +74,10 @@ int Hooked32_PrintArgs(int argc, char** argv)
 	// C++17 style
 	int result = Hooks::CallOriginalFunction<int>(hook32->GetStartOfOriginalFunction(), argc, argv);
 
-	int capital = SomeStrong(result);
+	int myResult = SomeCalculations(result);
 
 	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
-	return capital;
+	return myResult;
 }
 #endif
 

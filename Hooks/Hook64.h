@@ -5,7 +5,7 @@
 
 namespace Hooks {
 	constexpr DWORD Hooks_Hooks64_BYTES_BACKUP = 32;
-	constexpr DWORD Hooks_Hooks64_SAFE_BYTES_MIN = 13;
+	constexpr DWORD Hooks_Hooks64_SAFE_BYTES_MIN = 14;
 	constexpr DWORD Hooks_Hooks64_SAFE_BYTES_MAX = Hooks_Hooks64_BYTES_BACKUP - Hooks_Hooks64_SAFE_BYTES_MIN;
 
 	class Hook64
