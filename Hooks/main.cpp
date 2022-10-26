@@ -74,7 +74,7 @@ int Hooked32_PrintArgs(int argc, char** argv)
 	// C++17 style
 	int result = Hooks::CallOriginalFunction<int>(hook32->GetStartOfOriginalFunction(), argc, argv);
 
-	int myResult = SomeCalculations(result);
+	int myResult = SomeCalculations(result, result + 123);
 
 	std::cout << "END HOOKED64 [" << result << "]" << std::endl;
 	return myResult;
